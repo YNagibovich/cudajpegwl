@@ -1,0 +1,30 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source">
+      <UniqueIdentifier>{22eec7e7-127b-4a0a-81ce-4350223a1322}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Headers">
+      <UniqueIdentifier>{6e1558e3-2019-4dbb-a4a7-953ab8cd78d5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\DICOM">
+      <UniqueIdentifier>{a2d9a758-a950-47bf-a8ed-1adfe156f726}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\src\Endianess.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\dicomlib\dicom_file.h">
+      <Filter>Source\DICOM</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\src\jpegNPP.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\dicomlib\dicom_file.cpp">
+      <Filter>Source\DICOM</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>

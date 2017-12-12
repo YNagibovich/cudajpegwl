@@ -1,0 +1,23 @@
+﻿  jpegNPP.cpp
+d:\dcmsys\cudajpeg\src\jpegnpp.cpp(449): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
+d:\dcmsys\cudajpeg\src\jpegnpp.cpp(457): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
+c:\program files (x86)\microsoft visual studio 14.0\vc\include\algorithm(1669): warning C4996: 'std::reverse_copy::_Unchecked_iterators::_Deprecate': Call to 'std::reverse_copy' with parameters that may be unsafe - this call relies on the caller to check that the passed values are correct. To disable this warning, use -D_SCL_SECURE_NO_WARNINGS. See documentation on how to use Visual C++ 'Checked Iterators'
+  c:\program files (x86)\microsoft visual studio 14.0\vc\include\algorithm(1669): note: see declaration of 'std::reverse_copy::_Unchecked_iterators::_Deprecate'
+  d:\dcmsys\cudajpeg\src\endianess.h(55): note: see reference to function template instantiation '_OutIt *std::reverse_copy<unsigned char*,unsigned char*>(_BidIt,_BidIt,_OutIt)' being compiled
+          with
+          [
+              _OutIt=unsigned char *,
+              _BidIt=unsigned char *
+          ]
+  d:\dcmsys\cudajpeg\src\jpegnpp.cpp(106): note: see reference to function template instantiation 'void writeBigEndian<T>(unsigned char *,T)' being compiled
+          with
+          [
+              T=unsigned short
+          ]
+  d:\dcmsys\cudajpeg\src\jpegnpp.cpp(150): note: see reference to function template instantiation 'void writeAndAdvance<unsigned short>(unsigned char *&,T)' being compiled
+          with
+          [
+              T=unsigned short
+          ]
+  jpegNPP_vs2015.vcxproj -> D:\dcmsys\cudajpeg\build\../bin/jpegNPP.exe
+  jpegNPP_vs2015.vcxproj -> ../bin/jpegNPP.pdb (Full PDB)
