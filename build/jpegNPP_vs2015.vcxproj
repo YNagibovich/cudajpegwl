@@ -20,6 +20,7 @@
   <ItemGroup>
     <ClCompile Include="..\src\dicomlib\dicom_file.cpp" />
     <ClCompile Include="..\src\jpegNPP.cpp" />
+    <ClCompile Include="..\src\npp_src.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{8128DF04-20E0-4C34-B367-4F801C1AB667}</ProjectGuid>

@@ -26,5 +26,8 @@
     <ClCompile Include="..\src\dicomlib\dicom_file.cpp">
       <Filter>Source\DICOM</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\npp_src.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
