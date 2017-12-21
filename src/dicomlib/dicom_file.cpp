@@ -16,6 +16,12 @@
 CDicomFile::CDicomFile(const char* pFilename /* = nullptr*/, uint16_t nStopGroup/* = 0*/, uint16_t nStopTag /* = 0*/):
     m_pRawData(nullptr)
 {
+    const size_t cnPreSize = 256;
+    
+    m_vImageLengths.reserve(cnPreSize);
+    m_vTags.reserve(cnPreSize);
+    m_vImagePointers.reserve(cnPreSize);
+
     if (pFilename != nullptr && strlen(pFilename))
     {
         loadFile(pFilename, nStopGroup, nStopTag);
