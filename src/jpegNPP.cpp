@@ -705,6 +705,8 @@ int main(int argc, char **argv)
         aDstImageStep[i] = static_cast<Npp32s>(nPitch);
     }
 
+    /*
+
     // Scale to target image size
     // Assume we only deal with 420 images.
     int aSampleFactor[3] = {1, 2, 2};
@@ -727,7 +729,7 @@ int main(int argc, char **argv)
         NPP_CHECK_NPP(nppiResize_8u_C1R(apSrcImage[i], aSrcImageStep[i], oSrcImageSize, oSrcImageROI,
                                         apDstImage[i], aDstImageStep[i], oDstImageSize, oDstImageROI, eInterploationMode));
     }
-
+    */
 
     //////////////////////////////////////////////////////////////////////////
     //   Output
