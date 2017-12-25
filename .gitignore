@@ -3,3 +3,11 @@
 ################################################################################
 
 /build/jpegNPP_vs2015.VC.VC.opendb
+/build/.vs/jpegNPP_vs2015/v14
+*.deps
+*.cache
+*.obj
+*.idb
+*.pdb
+*.tlog
+/build/x64/Debug/kernels.cu.obj
