@@ -10,6 +10,9 @@
     <Filter Include="Source\DICOM">
       <UniqueIdentifier>{a2d9a758-a950-47bf-a8ed-1adfe156f726}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\CUDA">
+      <UniqueIdentifier>{3a20ee76-d85a-4efc-9148-194aa0479e70}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\Endianess.h">
@@ -26,8 +29,10 @@
     <ClCompile Include="..\src\dicomlib\dicom_file.cpp">
       <Filter>Source\DICOM</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\npp_src.cpp">
-      <Filter>Source</Filter>
-    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <CudaCompile Include="..\src\kernels.cu">
+      <Filter>Source\CUDA</Filter>
+    </CudaCompile>
   </ItemGroup>
 </Project>

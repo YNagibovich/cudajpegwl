@@ -20,7 +20,13 @@
   <ItemGroup>
     <ClCompile Include="..\src\dicomlib\dicom_file.cpp" />
     <ClCompile Include="..\src\jpegNPP.cpp" />
-    <ClCompile Include="..\src\npp_src.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <CudaCompile Include="..\src\kernels.cu">
+      <FileType>Document</FileType>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+    </CudaCompile>
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{8128DF04-20E0-4C34-B367-4F801C1AB667}</ProjectGuid>
@@ -71,7 +77,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <AdditionalDependencies>nppisu.lib;nppicom.lib;nppig.lib;nppc.lib;cudart_static.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(CudaToolkitLibDir);../src/common/FreeImage/lib;../src/common/FreeImage/lib/$(TARGET_OS);../src/common/FreeImage/lib/$(TARGET_OS)/$(TARGET_ARCH)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v9.0\lib\x64\";$(CudaToolkitLibDir);../src/common/FreeImage/lib;../src/common/FreeImage/lib/$(TARGET_OS);../src/common/FreeImage/lib/$(TARGET_OS)/$(TARGET_ARCH)</AdditionalLibraryDirectories>
       <OutputFile>$(OutDir)/jpegNPP.exe</OutputFile>
     </Link>
     <CudaCompile>
@@ -116,7 +122,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Platform)'=='x64'">
     <Link>
-      <AdditionalDependencies>freeimage64.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>cudart.lib;freeimage64.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
