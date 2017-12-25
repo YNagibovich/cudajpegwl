@@ -1,5 +1,4 @@
-﻿
-#include "cuda_kernels.h"
+﻿#include "driver_types.h"
 
 typedef unsigned char   uint8;
 typedef unsigned int    uint32;
