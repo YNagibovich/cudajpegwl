@@ -1,41 +1,3 @@
-/*
-* Copyright 1993-2015 NVIDIA Corporation.  All rights reserved.
-*
-* NOTICE TO USER:
-*
-* This source code is subject to NVIDIA ownership rights under U.S. and
-* international Copyright laws.
-*
-* NVIDIA MAKES NO REPRESENTATION ABOUT THE SUITABILITY OF THIS SOURCE
-* CODE FOR ANY PURPOSE.  IT IS PROVIDED "AS IS" WITHOUT EXPRESS OR
-* IMPLIED WARRANTY OF ANY KIND.  NVIDIA DISCLAIMS ALL WARRANTIES WITH
-* REGARD TO THIS SOURCE CODE, INCLUDING ALL IMPLIED WARRANTIES OF
-* MERCHANTABILITY, NONINFRINGEMENT, AND FITNESS FOR A PARTICULAR PURPOSE.
-* IN NO EVENT SHALL NVIDIA BE LIABLE FOR ANY SPECIAL, INDIRECT, INCIDENTAL,
-* OR CONSEQUENTIAL DAMAGES, OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS
-* OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE
-* OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE
-* OR PERFORMANCE OF THIS SOURCE CODE.
-*
-* U.S. Government End Users.  This source code is a "commercial item" as
-* that term is defined at 48 C.F.R. 2.101 (OCT 1995), consisting  of
-* "commercial computer software" and "commercial computer software
-* documentation" as such terms are used in 48 C.F.R. 12.212 (SEPT 1995)
-* and is provided to the U.S. Government only as a commercial end item.
-* Consistent with 48 C.F.R.12.212 and 48 C.F.R. 227.7202-1 through
-* 227.7202-4 (JUNE 1995), all U.S. Government End Users acquire the
-* source code with only those rights set forth herein.
-*/
-
-// This sample needs at least CUDA 5.5 and a GPU that has at least Compute Capability 2.0
-
-// This sample demonstrates a simple image processing pipeline.
-// First, a JPEG file is huffman decoded and inverse DCT transformed and dequantized.
-// Then the different planes are resized. Finally, the resized image is quantized, forward
-// DCT transformed and huffman encoded.
-
-//#include "kernels.cuh"
-
 #include <iostream>
 #include <npp.h>
 #include <cuda_runtime.h>
@@ -88,18 +50,9 @@ struct HuffmanTable
     unsigned char aTable[256];
 };
 
-
 int DivUp(int x, int d)
 {
     return (x + d - 1) / d;
-}
-
-template<typename T>
-T readAndAdvance(const unsigned char *&pData)
-{
-    T nElement = readBigEndian<T>(pData);
-    pData += sizeof(T);
-    return nElement;
 }
 
 template<typename T>
@@ -108,7 +61,6 @@ void writeAndAdvance(unsigned char *&pData, T nElement)
     writeBigEndian<T>(pData, nElement);
     pData += sizeof(T);
 }
-
 
 int nextMarker(const unsigned char *pData, int &nPos, int nLength)
 {
@@ -154,41 +106,6 @@ void writeJFIFTag(unsigned char *&pData)
     pData += sizeof(JFIF_TAG);
 }
 
-void loadJpeg(const char *input_file, unsigned char *&pJpegData, int &nInputLength)
-{
-    // Load file into CPU memory
-    ifstream stream(input_file, ifstream::binary);
-
-    if (!stream.good())
-    {
-        return;
-    }
-
-    stream.seekg(0, ios::end);
-    nInputLength = (int)stream.tellg();
-    stream.seekg(0, ios::beg);
-
-    pJpegData = new unsigned char[nInputLength];
-    stream.read(reinterpret_cast<char *>(pJpegData), nInputLength);
-}
-
-void readFrameHeader(const unsigned char *pData, FrameHeader &header)
-{
-    readAndAdvance<unsigned short>(pData);
-    header.nSamplePrecision = readAndAdvance<unsigned char>(pData);
-    header.nHeight = readAndAdvance<unsigned short>(pData);
-    header.nWidth = readAndAdvance<unsigned short>(pData);
-    header.nComponents = readAndAdvance<unsigned char>(pData);
-
-    for (int c=0; c<header.nComponents; ++c)
-    {
-        header.aComponentIdentifier[c] = readAndAdvance<unsigned char>(pData);
-        header.aSamplingFactors[c] = readAndAdvance<unsigned char>(pData);
-        header.aQuantizationTableSelector[c] = readAndAdvance<unsigned char>(pData);
-    }
-
-}
-
 void writeFrameHeader(const FrameHeader &header, unsigned char *&pData)
 {
     unsigned char aTemp[128];
@@ -213,25 +130,6 @@ void writeFrameHeader(const FrameHeader &header, unsigned char *&pData)
     memcpy(pData, aTemp, nLength);
     pData += nLength;
 }
-
-
-void readScanHeader(const unsigned char *pData, ScanHeader &header)
-{
-    readAndAdvance<unsigned short>(pData);
-
-    header.nComponents = readAndAdvance<unsigned char>(pData);
-
-    for (int c=0; c<header.nComponents; ++c)
-    {
-        header.aComponentSelector[c] = readAndAdvance<unsigned char>(pData);
-        header.aHuffmanTablesSelector[c] = readAndAdvance<unsigned char>(pData);
-    }
-
-    header.nSs = readAndAdvance<unsigned char>(pData);
-    header.nSe = readAndAdvance<unsigned char>(pData);
-    header.nA = readAndAdvance<unsigned char>(pData);
-}
-
 
 void writeScanHeader(const ScanHeader &header, unsigned char *&pData)
 {
@@ -258,58 +156,12 @@ void writeScanHeader(const ScanHeader &header, unsigned char *&pData)
     pData += nLength;
 }
 
-
-void readQuantizationTables(const unsigned char *pData, QuantizationTable *pTables)
-{
-    unsigned short nLength = readAndAdvance<unsigned short>(pData) - 2;
-
-    while (nLength > 0)
-    {
-        unsigned char nPrecisionAndIdentifier = readAndAdvance<unsigned char>(pData);
-        int nIdentifier = nPrecisionAndIdentifier & 0x0f;
-
-        pTables[nIdentifier].nPrecisionAndIdentifier = nPrecisionAndIdentifier;
-        memcpy(pTables[nIdentifier].aTable, pData, 64);
-        pData += 64;
-
-        nLength -= 65;
-    }
-}
-
 void writeQuantizationTable(const QuantizationTable &table, unsigned char *&pData)
 {
     writeMarker(0x0DB, pData);
     writeAndAdvance<unsigned short>(pData, sizeof(QuantizationTable) + 2);
     memcpy(pData, &table, sizeof(QuantizationTable));
     pData += sizeof(QuantizationTable);
-}
-
-void readHuffmanTables(const unsigned char *pData, HuffmanTable *pTables)
-{
-    unsigned short nLength = readAndAdvance<unsigned short>(pData) - 2;
-
-    while (nLength > 0)
-    {
-        unsigned char nClassAndIdentifier = readAndAdvance<unsigned char>(pData);
-        int nClass = nClassAndIdentifier >> 4; // AC or DC
-        int nIdentifier = nClassAndIdentifier & 0x0f;
-        int nIdx = nClass * 2 + nIdentifier;
-        pTables[nIdx].nClassAndIdentifier = nClassAndIdentifier;
-
-        // Number of Codes for Bit Lengths [1..16]
-        int nCodeCount = 0;
-
-        for (int i = 0; i < 16; ++i)
-        {
-            pTables[nIdx].aCodes[i] = readAndAdvance<unsigned char>(pData);
-            nCodeCount += pTables[nIdx].aCodes[i];
-        }
-
-        memcpy(pTables[nIdx].aTable, pData, nCodeCount);
-        pData += nCodeCount;
-
-        nLength -= (17 + nCodeCount);
-    }
 }
 
 void writeHuffmanTable(const HuffmanTable &table, unsigned char *&pData)
@@ -327,13 +179,6 @@ void writeHuffmanTable(const HuffmanTable &table, unsigned char *&pData)
     writeAndAdvance<unsigned short>(pData, 17 + nCodeCount + 2);
     memcpy(pData, &table, 17 + nCodeCount);
     pData += 17 + nCodeCount;
-}
-
-
-void readRestartInterval(const unsigned char *pData, int &nRestartInterval)
-{
-    readAndAdvance<unsigned short>(pData);
-    nRestartInterval = readAndAdvance<unsigned short>(pData);
 }
 
 void printHelp()
@@ -362,7 +207,8 @@ bool printfNPPinfo(int argc, char *argv[], int cudaVerMajor, int cudaVerMinor)
     return bVal;
 }
 
-cudaError_t RGB2YUV(uint8_t* d_srcRGB, int src_width, int src_height,
+cudaError_t RGB2YUV(unsigned char* d_srcRGB, int src_width, int src_height, 
+    int nrIntercept, int nrSlope, int nWindowLevel, int nWindowWidth,
     unsigned char* Y, size_t yPitch, int yWidth, int yHeight,
     unsigned char* U, size_t uPitch, int uWidth, int uHeight,
     unsigned char* V, size_t vPitch, int vWidth, int vHeight)
@@ -382,7 +228,10 @@ cudaError_t RGB2YUV(uint8_t* d_srcRGB, int src_width, int src_height,
 
     //kernel_rgb2yuv <<<grid,block>>>(d_srcRGB, Y, u, v, src_width, src_height, yPitch);
 
-    void* args[] = { &d_srcRGB, &Y, &u, &v, &src_width, &src_height, &yPitch };
+    short minWindowValue = nWindowLevel - (nWindowWidth / 2);
+    short WindowWidth = (short)nWindowWidth;
+
+    void* args[] = { &d_srcRGB, &Y, &u, &v, &src_width, &src_height, &yPitch , &nrIntercept, &nrSlope, &minWindowValue, &WindowWidth};
 
     cudaLaunchKernel(
         (const void*)&kernel_rgb2yuv, // pointer to kernel func.
@@ -412,8 +261,6 @@ cudaError_t RGB2YUV(uint8_t* d_srcRGB, int src_width, int src_height,
         block, // block
         args1  // arguments
     );
-
-
 
     cudaStatus = cudaGetLastError();
     if (cudaStatus != cudaSuccess) {
@@ -448,7 +295,6 @@ cudaError_t RGB2YUV(uint8_t* d_srcRGB, int src_width, int src_height,
         //fprintf(stderr, "cudaDeviceSynchronize returned error code %d after launching kernel_resize_UV!\n", cudaStatus);
         goto Error;
     }
-
 Error:
     cudaFree(u);
     cudaFree(v);
@@ -456,13 +302,10 @@ Error:
     return cudaStatus;
 }
 
-
-
-int jpegNPP(const char *szOutputFile, unsigned char* pData, int img_width, int img_height)
+int jpegNPP(const char *szOutputFile, unsigned char* pData, int img_width, int img_height,
+    int nrIntercept, int nrSlope, int nWindowLevel, int nWindowWidth)
 {
-
     unsigned char* d_srcRGB = nullptr;
-
 
     NppiDCTState *pDCTState;
     NPP_CHECK_NPP(nppiDCTInitAlloc(&pDCTState));
@@ -602,6 +445,12 @@ int jpegNPP(const char *szOutputFile, unsigned char* pData, int img_width, int i
     aQuantizationTables[1].nPrecisionAndIdentifier = 1;
     memcpy(aQuantizationTables[1].aTable, std_UV_QT, 64);
 
+
+    // set quality
+    NPP_CHECK_NPP(nppiQuantFwdRawTableInit_JPEG_8u(aQuantizationTables[0].aTable, 100));
+    NPP_CHECK_NPP(nppiQuantFwdRawTableInit_JPEG_8u(aQuantizationTables[1].aTable, 100));
+
+
     NPP_CHECK_CUDA(cudaMemcpyAsync(pdQuantizationTables, aQuantizationTables[0].aTable, 64, cudaMemcpyHostToDevice));
     NPP_CHECK_CUDA(cudaMemcpyAsync(pdQuantizationTables + 64, aQuantizationTables[1].aTable, 64, cudaMemcpyHostToDevice));
 
@@ -652,27 +501,52 @@ int jpegNPP(const char *szOutputFile, unsigned char* pData, int img_width, int i
         aSrcImageStep[i] = static_cast<Npp32s>(nPitch);
     }
 
-    //RGB2YUV
-    cudaError_t cudaStatus;
+    
+    
 
-    // prepare data
-    size_t nSrcSize = img_width*img_height*2; // assume 8 bits
+    //////////////////////////////////////////////////////////////////////////
+    // load raw data
+    
+    cudaError_t cudaStatus;
+    cudaEvent_t start, stop;
+    cudaEventCreate(&start);
+    cudaEventCreate(&stop);
+    float milliseconds = 0;
+    
+    size_t nSrcSize = img_width*img_height*2; // assume 16 bits
     NPP_CHECK_CUDA(cudaMalloc(&d_srcRGB, nSrcSize));
+
+    cudaEventRecord(start);
+    
     NPP_CHECK_CUDA(cudaMemcpy(d_srcRGB, pData, nSrcSize, cudaMemcpyHostToDevice));
 
-    
-    cudaStatus = RGB2YUV(d_srcRGB, img_width, img_height,
+    cudaEventRecord(stop);
+    cudaEventSynchronize(stop);
+    cudaEventElapsedTime(&milliseconds, start, stop);
+
+    printf("Load raw data : %f ms\n", milliseconds);
+        
+
+    //////////////////////////////////////////////////////////////////////////
+    // color conversions
+
+    cudaEventRecord(start);
+
+    cudaStatus = RGB2YUV(d_srcRGB, img_width, img_height, 
+        nrIntercept, nrSlope, nWindowLevel, nWindowWidth,
         apSrcImage[0], aSrcPitch[0], aSrcSize[0].width, aSrcSize[0].height,
         apSrcImage[1], aSrcPitch[1], aSrcSize[1].width, aSrcSize[1].height,
         apSrcImage[2], aSrcPitch[2], aSrcSize[2].width, aSrcSize[2].height);
 
+    cudaEventRecord(stop);
+    cudaEventSynchronize(stop);
+    cudaEventElapsedTime(&milliseconds, start, stop);
 
-    /**
-    * Forward DCT, quantization and level shift part of the JPEG encoding.
-    * Input is expected in 8x8 macro blocks and output is expected to be in 64x1
-    * macro blocks. The new version of the primitive takes the ROI in image pixel size and
-    * works with DCT coefficients that are in zig-zag order.
-    */
+    printf("Conversions : %f ms\n", milliseconds);
+
+    //////////////////////////////////////////////////////////////////////////
+    // encoding, DCT coefficients in zig-zag order !!!
+
     int k = 0;
     NPP_CHECK_NPP(nppiDCTQuantFwd8x8LS_JPEG_8u16s_C1R_NEW(apSrcImage[0], aSrcImageStep[0],
         apdDCT[0], aDCTStep[0],
@@ -721,6 +595,10 @@ int jpegNPP(const char *szOutputFile, unsigned char* pData, int img_width, int i
     * Huffman Encoding of the JPEG Encoding.
     * Input is expected to be 64x1 macro blocks and output is expected as byte stuffed huffman encoded JPEG scan.
     */
+
+
+    cudaEventRecord(start);
+
     Npp32s nSs = 0;
     Npp32s nSe = 63;
     Npp32s nH = 0;
@@ -733,13 +611,24 @@ int jpegNPP(const char *szOutputFile, unsigned char* pData, int img_width, int i
         aSrcSize,
         pJpegEncoderTemp));
 
+    cudaEventRecord(stop);
+    cudaEventSynchronize(stop);
+    cudaEventElapsedTime(&milliseconds, start, stop);
+
+    printf("Encoding : %f ms\n", milliseconds);
+    
+    //////////////////////////////////////////////////////////////////////////
+    // cleanup
+
     for (int i = 0; i < 3; ++i)
     {
         nppiEncodeHuffmanSpecFree_JPEG(apHuffmanDCTable[i]);
         nppiEncodeHuffmanSpecFree_JPEG(apHuffmanACTable[i]);
     }
 
+    //////////////////////////////////////////////////////////////////////////
     // Write JPEG
+
     unsigned char *pDstJpeg = new unsigned char[4 << 20];
     unsigned char *pDstOutput = pDstJpeg;
 
@@ -764,9 +653,19 @@ int jpegNPP(const char *szOutputFile, unsigned char* pData, int img_width, int i
     oScanHeader.nSs = 0;
     oScanHeader.nSe = 63;
     oScanHeader.nA = 0;
-
+    
     writeScanHeader(oScanHeader, pDstOutput);
+
+    cudaEventRecord(start);
+    
     NPP_CHECK_CUDA(cudaMemcpy(pDstOutput, pdScan, nScanLength, cudaMemcpyDeviceToHost));
+
+    cudaEventRecord(stop);
+    cudaEventSynchronize(stop);
+    cudaEventElapsedTime(&milliseconds, start, stop);
+
+    printf("Copy encoded from GPU to host: %f ms\n", milliseconds);
+
     pDstOutput += nScanLength;
     writeMarker(0x0D9, pDstOutput);
 
@@ -782,6 +681,7 @@ int jpegNPP(const char *szOutputFile, unsigned char* pData, int img_width, int i
     cudaFree(pJpegEncoderTemp);
     cudaFree(pdQuantizationTables);
     cudaFree(pdScan);
+    cudaFree(d_srcRGB);
 
     nppiDCTFree(pDCTState);
 
@@ -877,11 +777,23 @@ int main(int argc, char **argv)
 
     int nWidth = 512;
     int nHeight = 512;
+    int nrIntercept = 1;
+    int nrSlope = 1;
 
     dcm.getValue(0x0028, 0x0011, nWidth);
     dcm.getValue(0x0028, 0x0010, nHeight);
 
-    jpegNPP(szOutputFile, pImageData, nWidth, nHeight);
+    std::string sVal;
+    
+    dcm.getValue(0x0028, 0x1052, sVal);
+    nrIntercept = atoi(sVal.c_str());
+    dcm.getValue(0x0028, 0x1053, sVal);
+    nrSlope = atoi(sVal.c_str());
+
+    int nWindowLevel = -885;
+    int nWindowWidth = 4279;
+
+    jpegNPP(szOutputFile, pImageData, nWidth, nHeight, nrIntercept, nrSlope, nWindowLevel, nWindowWidth);
 
     return EXIT_SUCCESS;
 }
