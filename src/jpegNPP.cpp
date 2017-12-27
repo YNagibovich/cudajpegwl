@@ -704,10 +704,10 @@ int main(int argc, char **argv)
         return EXIT_SUCCESS;
     }
 
-    const char *szInputFile;
-    const char *szOutputFile;
-    double dWindow;
-    double dLevel;
+    const char  *szInputFile;
+    const char  *szOutputFile;
+    int         nWindowLevel = 0;
+    int         nWindowWidth = 0;
 
     //////////////////////////////////////////////////////////////////////////
     // params
@@ -739,24 +739,23 @@ int main(int argc, char **argv)
 
     if (checkCmdLineFlag(argc, (const char **)argv, "window"))
     {
-        dWindow = max(0.0f, min(getCmdLineArgumentFloat(argc, (const char **)argv, "scale"), 999999.0f));
+        nWindowWidth = max(0, min(getCmdLineArgumentInt(argc, (const char **)argv, "window"), 999999));
     }
     else
     {
-        dWindow = 0.0;
+        nWindowWidth = 4279; // default
     }
-    cout << "Window : " << dWindow << endl;
+    cout << "Window : " << nWindowWidth << endl;
 
     if (checkCmdLineFlag(argc, (const char **)argv, "level"))
     {
-        dLevel = max(0.0f, min(getCmdLineArgumentFloat(argc, (const char **)argv, "scale"), 999999.0f));
+        nWindowLevel = max(0, min(getCmdLineArgumentInt(argc, (const char **)argv, "level"), 999999));
     }
     else
     {
-        dLevel = 0.0;
+        nWindowLevel = -885; // default
     }
-    cout << "Level : " << dLevel << endl;
-
+    cout << "Level : " << nWindowLevel << endl;
 
     //////////////////////////////////////////////////////////////////////////
     // load
@@ -779,19 +778,24 @@ int main(int argc, char **argv)
     int nHeight = 512;
     int nrIntercept = 1;
     int nrSlope = 1;
+    int nBits = 8;
 
     dcm.getValue(0x0028, 0x0011, nWidth);
     dcm.getValue(0x0028, 0x0010, nHeight);
 
+    // check bits
+    dcm.getValue(0x0028, 0x0101, nBits); 
+    if (nBits <= 8)
+    {
+        cerr << "Invalid DICOM file : " << szInputFile << endl;
+        return EXIT_FAILURE;
+    }
+
     std::string sVal;
-    
     dcm.getValue(0x0028, 0x1052, sVal);
     nrIntercept = atoi(sVal.c_str());
     dcm.getValue(0x0028, 0x1053, sVal);
     nrSlope = atoi(sVal.c_str());
-
-    int nWindowLevel = -885;
-    int nWindowWidth = 4279;
 
     jpegNPP(szOutputFile, pImageData, nWidth, nHeight, nrIntercept, nrSlope, nWindowLevel, nWindowWidth);
 
