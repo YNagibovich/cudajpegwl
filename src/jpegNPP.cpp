@@ -704,6 +704,8 @@ int main(int argc, char **argv)
         return EXIT_SUCCESS;
     }
 
+    std::string sOutput;
+
     const char  *szInputFile;
     const char  *szOutputFile;
     int         nWindowLevel = 0;
@@ -727,16 +729,6 @@ int main(int argc, char **argv)
     }
     cout << "Source File: " << szInputFile << endl;
 
-    if (checkCmdLineFlag(argc, (const char **)argv, "output"))
-    {
-        getCmdLineArgumentString(argc, (const char **)argv, "output", (char **)&szOutputFile);
-    }
-    else
-    {
-        szOutputFile = "scaled.jpg";
-    }
-    cout << "Output File: " << szOutputFile << endl;
-
     if (checkCmdLineFlag(argc, (const char **)argv, "window"))
     {
         nWindowWidth = max(0, min(getCmdLineArgumentInt(argc, (const char **)argv, "window"), 999999));
@@ -757,6 +749,22 @@ int main(int argc, char **argv)
     }
     cout << "Level : " << nWindowLevel << endl;
 
+    if (checkCmdLineFlag(argc, (const char **)argv, "output"))
+    {
+        getCmdLineArgumentString(argc, (const char **)argv, "output", (char **)&szOutputFile);
+    }
+    else
+    {
+        sOutput = szInputFile;
+        sOutput += "_converted_";
+        sOutput += std::to_string(nWindowWidth);
+        sOutput += "_";
+        sOutput += std::to_string(nWindowLevel);
+        sOutput += ".jpg";
+        szOutputFile = sOutput.c_str();
+    }
+    cout << "Output File: " << szOutputFile << endl;
+    
     //////////////////////////////////////////////////////////////////////////
     // load
     
